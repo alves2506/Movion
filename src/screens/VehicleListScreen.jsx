@@ -1,54 +1,63 @@
-// VehicleListScreen.jsx — lista todos os veículos cadastrados.
-import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-
 import { getVehicles } from '../services/vehicleStorage';
 
-export default function VehicleListScreen({ navigation }) {
-  const [veiculos, setVeiculos] = useState([]);
+export default function VehicleListScreen() {
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Carrega a lista toda vez que a tela aparece.
+  // Carrega os veículos salvos sempre que a tela entra em foco
   useFocusEffect(
     useCallback(() => {
-      async function carregar() {
-        setVeiculos(await getVehicles());
-      }
-      carregar();
+      loadVehicles();
     }, [])
   );
 
-  return (
-    <View style={styles.tela}>
-      {/* FlatList repete o bloco "renderItem" para cada veículo da lista. */}
-      <FlatList
-        data={veiculos}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.texto}>Nenhum veículo cadastrado.</Text>}
-        renderItem={({ item }) => (
-          <View style={styles.cartao}>
-            <Text style={styles.titulo}>
-              {item.brand} {item.model}
-            </Text>
-            <Text style={styles.texto}>
-              {item.year} • {item.plate} • {item.currentKm} km
-            </Text>
-          </View>
-        )}
-      />
+  async function loadVehicles() {
+    setLoading(true);
+    const data = await getVehicles();
+    setVehicles(data);
+    setLoading(false);
+  }
 
-      <Pressable style={styles.botao} onPress={() => navigation.navigate('VehicleForm')}>
-        <Text style={styles.botaoTexto}>+ Novo veículo</Text>
-      </Pressable>
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#14B8A6" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>🚘 Meus Veículos Cadastrados</Text>
+      
+      {vehicles.length === 0 ? (
+        <Text style={styles.empty}>Nenhum veículo cadastrado ainda.</Text>
+      ) : (
+        <FlatList
+          data={vehicles}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Text style={styles.vehicleTitle}>{item.brand} {item.model} ({item.year})</Text>
+              <Text style={styles.text}>Placa: {item.plate}</Text>
+              <Text style={styles.text}>Km atual: {item.currentKm} km</Text>
+            </View>
+          )}
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  tela: { flex: 1, padding: 16, backgroundColor: '#F4F7FA' },
-  cartao: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 12 },
-  titulo: { fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
-  texto: { fontSize: 16, color: '#475569' },
-  botao: { backgroundColor: '#14B8A6', padding: 14, borderRadius: 10, alignItems: 'center' },
-  botaoTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  container: { flex: 1, backgroundColor: '#F8FAFC', padding: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 20, fontWeight: 'bold', color: '#1E293B', marginBottom: 16, textAlign: 'center' },
+  empty: { textAlign: 'center', color: '#64748B', marginTop: 40, fontSize: 16 },
+  card: { backgroundColor: '#FFFFFF', padding: 16, borderRadius: 10, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', elevation: 2 },
+  vehicleTitle: { fontSize: 16, fontWeight: 'bold', color: '#0F172A', marginBottom: 4 },
+  text: { fontSize: 14, color: '#475569', marginTop: 2 }
 });

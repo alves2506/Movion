@@ -4,17 +4,29 @@
 // só para as minhas telas funcionarem. Os nomes das funções foram combinados.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CHAVE = '@movion:veiculos';
+const STORAGE_KEY = '@movion_vehicles';
 
-// Devolve a lista de veículos salvos (ou lista vazia).
+// Função para consultar/listar todos os veículos salvos
 export async function getVehicles() {
-  const texto = await AsyncStorage.getItem(CHAVE);
-  return texto ? JSON.parse(texto) : [];
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Erro ao buscar veículos:', error);
+    return [];
+  }
 }
 
-// Adiciona um veículo novo na lista e salva.
-export async function saveVehicle(veiculo) {
-  const lista = await getVehicles();
-  const novo = { ...veiculo, id: String(Date.now()) };
-  await AsyncStorage.setItem(CHAVE, JSON.stringify([...lista, novo]));
+// Função para cadastrar/salvar um novo veículo
+export async function saveVehicle(newVehicle) {
+  try {
+    const vehicles = await getVehicles();
+    const vehicleWithId = { id: Date.now().toString(), ...newVehicle };
+    vehicles.push(vehicleWithId);
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(vehicles));
+    return true;
+  } catch (error) {
+    console.error('Erro ao salvar veículo:', error);
+    return false;
+  }
 }
